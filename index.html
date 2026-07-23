@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>카이의 봇 메신저</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    }
+
+    body {
+      background-color: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .chat-container {
+      width: 100%;
+      max-width: 420px;
+      height: 680px;
+      background-color: #abc1d1;
+      display: flex;
+      flex-direction: column;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      overflow: hidden;
+    }
+
+    .chat-header {
+      background-color: #9bbbd4;
+      padding: 16px;
+      font-weight: bold;
+      font-size: 18px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      background-color: #ffe812;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #3c1e1e;
+      font-size: 14px;
+    }
+
+    .chat-messages {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .message-row {
+      display: flex;
+      gap: 8px;
+      max-width: 85%;
+    }
+
+    .message-row.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .message-row.bot {
+      align-self: flex-start;
+    }
+
+    .bubble {
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 14px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .message-row.user .bubble {
+      background-color: #ffe812;
+      color: #3c1e1e;
+      border-top-right-radius: 2px;
+    }
+
+    .message-row.bot .bubble {
+      background-color: #ffffff;
+      color: #000000;
+      border-top-left-radius: 2px;
+    }
+
+    .sender-name {
+      font-size: 11px;
+      color: #555;
+      margin-bottom: 4px;
+    }
+
+    .chat-input-area {
+      padding: 12px;
+      background-color: #ffffff;
+      display: flex;
+      gap: 8px;
+    }
+
+    .chat-input-area input {
+      flex: 1;
+      border: 1px solid #ddd;
+      border-radius: 20px;
+      padding: 10px 16px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .chat-input-area input:focus {
+      border-color: #9bbbd4;
+    }
+
+    .chat-input-area button {
+      background-color: #ffe812;
+      border: none;
+      border-radius: 20px;
+      padding: 0 16px;
+      font-weight: bold;
+      color: #3c1e1e;
+      cursor: pointer;
+    }
+
+    .chat-input-area button:hover {
+      background-color: #fada0a;
+    }
+  </style>
+</head>
+<body>
+
+<div class="chat-container">
+  <div class="chat-header">
+    <div class="avatar">봇</div>
+    <div>
+      <div>봇</div>
+      <div style="font-size: 11px; color: #666; font-weight: normal;">제작자: 카이</div>
+    </div>
+  </div>
+
+  <div class="chat-messages" id="chatMessages">
+    <div class="message-row bot">
+      <div class="avatar">봇</div>
+      <div>
+        <div class="sender-name">봇</div>
+        <div class="bubble">안녕하세요! 카이님이 만든 봇입니다. 😎
+'내 이름은 [이름]'으로 이름을 설정하거나 '도움말'을 입력해 보세요!</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-input-area">
+    <input type="text" id="userInput" placeholder="메시지를 입력하세요..." onkeydown="if(event.key==='Enter') sendMessage()" />
+    <button onclick="sendMessage()">전송</button>
+  </div>
+</div>
+
+<script>
+  // 1. 저장된 사용자 이름 불러오기 (기본값: '사용자')
+  let senderName = localStorage.getItem("userName") || "사용자";
+
+  function sendMessage() {
+    const input = document.getElementById("userInput");
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    // 현재 저장된 사용자 이름으로 메시지 출력
+    appendMessage(senderName, msg, "user");
+    input.value = "";
+
+    handleBotResponse(msg);
+  }
+
+  function appendMessage(sender, text, type) {
+    const container = document.getElementById("chatMessages");
+    const row = document.createElement("div");
+    row.className = `message-row ${type}`;
+
+    if (type === "bot") {
+      row.innerHTML = `
+        <div class="avatar">봇</div>
+        <div>
+          <div class="sender-name">${escapeHtml(sender)}</div>
+          <div class="bubble">${escapeHtml(text)}</div>
+        </div>
+      `;
+    } else {
+      row.innerHTML = `
+        <div>
+          <div class="sender-name" style="text-align: right;">${escapeHtml(sender)}</div>
+          <div class="bubble">${escapeHtml(text)}</div>
+        </div>
+      `;
+    }
+
+    container.appendChild(row);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  const replier = {
+    reply: function(responseMsg) {
+      appendMessage("봇", responseMsg, "bot");
+    }
+  };
+
+  // 봇 응답 전체 원본 로직 + 이름 설정 추가
+  function handleBotResponse(msg) {
+    const sender = senderName;
+
+    // [신규 기능] 이름 설정/변경 기능
+    if (msg.startsWith("내 이름은 ") || msg.startsWith("이름 변경 ")) {
+      let newName = msg.replace("내 이름은 ", "").replace("이름 변경 ", "").trim();
+
+      if (!newName) {
+        replier.reply("이름을 제대로 입력해 주세요! (예: 내 이름은 카이)");
+        return;
+      }
+
+      if (newName.length > 10) {
+        replier.reply("이름이 너무 길어요! 10자 이내로 설정해 주세요.");
+        return;
+      }
+
+      senderName = newName;
+      localStorage.setItem("userName", senderName);
+      replier.reply("네! 앞으로 " + senderName + " 님이라고 부를게요! 😊");
+      return;
+    }
+
+    // --- 원본 메신저봇 명령어 전체 복원 ---
+    if (msg == "안녕"){
+      replier.reply("안녕 반가워~!\n내 이름은 봇 이라고 해!\n잘 부탁해!!");
+    }
+    else if (msg == "누구"){
+      replier.reply("앗!\n소개를 안했구나!\n내 이름은 봇 이야!\n카이 라는 제작자분에게서\n만들어 졌지!\n엣헴~!");
+    }
+    else if (msg == "제작자"){
+      replier.reply("내 제작자는 카이야!\n열심히 성장 중인\n개발자지! 😎😎😁😁");
+    }
+    else if (msg == "심심해"){
+      replier.reply("그럼 주사위 놀이 할래?\n'주사위' 라고 입력해봐!");
+    }
+    else if (msg == "주사위"){
+      let n = Math.floor(Math.random() * 6) + 1;
+      replier.reply("🎲 " + n + " 이 나왔어!");
+    }
+    else if (msg == "도움말"){
+      replier.reply(
+        "📖 명령어\n\n" +
+        "내 이름은 [이름] (이름 설정)\n" +
+        "안녕\n" +
+        "누구\n" +
+        "제작자\n" +
+        "심심해\n" +
+        "주사위\n" +
+        "음추 (음식추천)\n" +
+        "아파\n" +
+        "뭐해\n" +
+        "사랑해\n" +
+        "따라해 (따라하게 히고 싶은 말)\n" +
+        "숫자 (랜덤 숫자 100)\n" +
+        "시간\n" +
+        "칭찬해\n" +
+        "개발자\n" +
+        "동전\n" +
+        "카이\n" +
+        "나 니 아빠임\n" +
+        "나 니 엄마임"
+      );
+    }
+    else if (msg == "음추") {
+      let foods = [
+        "🍕 피자", "🍗 치킨", "🍜 라면", "🍔 햄버거", "🍣 초밥",
+        "🥩 삼겹살", "🍛 카레", "🍝 파스타", "🥟 만두", "🍲 김치찌개",
+        "🍚 제육덮밥", "🌮 타코", "🍤 새우튀김", "🍙 주먹밥", "🥪 샌드위치"
+      ];
+      let food = foods[Math.floor(Math.random() * foods.length)];
+      replier.reply(
+        "🍽️ 오늘의 추천 음식!\n\n" +
+        food + "\n\n" +
+        "맛있게 드세요! 😋"
+      );
+    }
+    else if (msg == "아파") {
+      replier.reply(
+        "헉! 괜찮으신가요.. " + sender +
+        " 님.. ㅠㅠ\n빨리 나으시고..\n쾌유하세요.. ㅠㅠㅠㅠ"
+      );
+
+      // Thread.sleep 대신 7000ms(7초) 비동기 지연 실행
+      setTimeout(() => {
+        replier.reply(
+          sender + " 님..\nㅠㅠ 빨리 나으세요.. ㅠㅠ\n빨리 나으시길 기도 하겠습니다..\n일단 쉬세요..! ㅠㅠ\n몸에 안정을.."
+        );
+      }, 7000);
+    }
+    else if (msg == "사랑해") {
+      replier.reply("네! 저도 사랑해요! ♡♡♡♥︎♥︎♥︎");
+    }
+    else if (msg == "뭐해") {
+      replier.reply("대화 하던거 아니였나요..\n머쓱;;;;;;");
+    }
+    else if (msg.startsWith("따라해 ")) {
+      let text = msg.substring(4);
+      replier.reply(text);
+    }
+    else if (msg == "숫자") {
+      let n = Math.floor(Math.random() * 100) + 1;
+      replier.reply("🎲 숫자: " + n);
+    }
+    else if (msg == "시간") {
+      let now = new Date();
+      replier.reply("🕒 현재 시간\n" + now.toLocaleString());
+    }
+    else if (msg == "칭찬해") {
+      replier.reply(sender + " 님은 오늘도 열심히 하고 계시네요! 😎");
+    }
+    else if (msg == "개발자") {
+      replier.reply("🤫 카이 님이 열심히 만들고 있는 봇입니다!");
+    }
+    else if (msg == "동전") {
+      replier.reply(
+        Math.random() < 0.5 ? "🪙 앞면!" : "🪙 뒷면!"
+      );
+    }
+    else if (msg == "카이") {
+      replier.reply("😎 제 제작자를 부르셨나요?");
+    }
+    else if (msg == "나 니 아빠임") {
+      replier.reply(
+        "네..? 정말.. 카이님이신가요!?!?! 어디한번 이름을 봐서.... " + sender + " ...? 에엣!?!?! 진짜잖아...? 제작자님을 뵙습니다!!!!!!!!!!!!!"
+      );
+    }
+    else if (msg == "나 니 엄마임") {
+      replier.reply("엥? 전 엄마가 없고 아빠민 있습니다만?");
+    }
+  }
+</script>
+
+</body>
+</html>
+
